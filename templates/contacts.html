@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emergency Contacts — Emergency Chatbot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+    header {
+      background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+      padding: 12px 24px; display: flex; align-items: center; gap: 12px;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    header p  { font-size: 0.72rem; opacity: 0.8; }
+    .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+    .nav-link {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; color: #fff; padding: 5px 12px;
+      font-size: 0.75rem; text-decoration: none; transition: background 0.2s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.2); }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 24px 20px; }
+    h2 { font-size: 1rem; margin-bottom: 16px; }
+
+    .section { margin-bottom: 28px; }
+    .section-title {
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px;
+      color: #8b949e; margin-bottom: 10px; padding-bottom: 6px;
+      border-bottom: 1px solid #30363d;
+    }
+
+    .contacts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .contact-card {
+      background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+      padding: 16px; text-align: center; transition: border-color 0.2s;
+    }
+    .contact-card:hover { border-color: #ef4444; }
+    .contact-card .icon { font-size: 32px; margin-bottom: 8px; }
+    .contact-card .name { font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+    .contact-card .number {
+      font-size: 1.4rem; font-weight: 700; color: #ef4444; margin-bottom: 4px;
+    }
+    .contact-card .desc { font-size: 0.72rem; color: #8b949e; line-height: 1.4; }
+    .contact-card .call-btn {
+      display: inline-block; margin-top: 10px;
+      background: rgba(185,28,28,0.2); border: 1px solid #b91c1c;
+      border-radius: 16px; color: #fca5a5;
+      padding: 4px 14px; font-size: 0.72rem; text-decoration: none;
+      transition: background 0.2s;
+    }
+    .contact-card .call-btn:hover { background: rgba(185,28,28,0.4); }
+
+    .hospital-table { width: 100%; border-collapse: collapse; }
+    .hospital-table th, .hospital-table td {
+      text-align: left; padding: 10px 14px;
+      border-bottom: 1px solid #30363d; font-size: 0.82rem;
+    }
+    .hospital-table th { color: #8b949e; font-weight: 600; font-size: 0.72rem; text-transform: uppercase; }
+    .hospital-table tr:hover td { background: #161b22; }
+    .badge {
+      background: rgba(22,163,74,0.2); border: 1px solid #16a34a;
+      border-radius: 10px; color: #86efac; padding: 2px 8px; font-size: 0.68rem;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div style="font-size:24px">📞</div>
+  <div>
+    <h1>Emergency Contacts</h1>
+    <p>India — National & Local Emergency Services</p>
+  </div>
+  <div class="header-right">
+    <span style="font-size:0.75rem;color:rgba(255,255,255,0.7)">👤 {{ username }}</span>
+    <a href="/" class="nav-link">💬 Chatbot</a>
+    <a href="/logout" class="nav-link">Logout</a>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Scenario-specific contacts (shown when ?scenario= is set) -->
+  <div class="section" id="scenario-section" style="display:none">
+    <div class="section-title" id="scenario-title">📍 Relevant Contacts for This Emergency</div>
+    <div class="contacts-grid" id="scenario-contacts"></div>
+  </div>
+
+  <!-- National Emergency Numbers -->
+  <div class="section">
+    <div class="section-title">🚨 National Emergency Numbers</div>
+    <div class="contacts-grid">
+      <div class="contact-card">
+        <div class="icon">🆘</div>
+        <div class="name">National Emergency</div>
+        <div class="number">112</div>
+        <div class="desc">Police, Fire & Ambulance — Single number for all emergencies</div>
+        <a href="tel:112" class="call-btn">📞 Call 112</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">👮</div>
+        <div class="name">Police</div>
+        <div class="number">100</div>
+        <div class="desc">Law enforcement, crime, and public safety</div>
+        <a href="tel:100" class="call-btn">📞 Call 100</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">🔥</div>
+        <div class="name">Fire Services</div>
+        <div class="number">101</div>
+        <div class="desc">Fire emergencies, rescue operations</div>
+        <a href="tel:101" class="call-btn">📞 Call 101</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">🚑</div>
+        <div class="name">Ambulance</div>
+        <div class="number">108</div>
+        <div class="desc">Medical emergencies, accident response</div>
+        <a href="tel:108" class="call-btn">📞 Call 108</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">🌊</div>
+        <div class="name">Disaster Helpline</div>
+        <div class="number">1077</div>
+        <div class="desc">State disaster management authority</div>
+        <a href="tel:1077" class="call-btn">📞 Call 1077</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">🏛️</div>
+        <div class="name">NDMA Helpline</div>
+        <div class="number">1070</div>
+        <div class="desc">National Disaster Management Authority</div>
+        <a href="tel:1070" class="call-btn">📞 Call 1070</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">⚓</div>
+        <div class="name">Coast Guard</div>
+        <div class="number">1554</div>
+        <div class="desc">Maritime emergencies, sea rescue</div>
+        <a href="tel:1554" class="call-btn">📞 Call 1554</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">🌲</div>
+        <div class="name">Forest Fire</div>
+        <div class="number">1926</div>
+        <div class="desc">Forest fire reporting and response</div>
+        <a href="tel:1926" class="call-btn">📞 Call 1926</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">☣️</div>
+        <div class="name">Chemical Emergency</div>
+        <div class="number">1800-180-5999</div>
+        <div class="desc">Industrial and chemical hazard response</div>
+        <a href="tel:18001805999" class="call-btn">📞 Call Now</a>
+      </div>
+      <div class="contact-card">
+        <div class="icon">🧠</div>
+        <div class="name">Mental Health</div>
+        <div class="number">9152987821</div>
+        <div class="desc">iCall — Post-disaster mental health support</div>
+        <a href="tel:9152987821" class="call-btn">📞 Call Now</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hospitals (Static Demo) -->
+  <div class="section">
+    <div class="section-title">🏥 Major Government Hospitals (Demo — Kochi)</div>
+    <table class="hospital-table">
+      <thead>
+        <tr><th>Hospital</th><th>Type</th><th>Contact</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Government Medical College, Ernakulam</td><td>Government</td><td>0484-2394000</td><td><span class="badge">24/7</span></td></tr>
+        <tr><td>Ernakulam General Hospital</td><td>Government</td><td>0484-2361251</td><td><span class="badge">24/7</span></td></tr>
+        <tr><td>AIIMS Mangalagiri (Nearest AIIMS)</td><td>Central Govt</td><td>0863-2346000</td><td><span class="badge">24/7</span></td></tr>
+        <tr><td>Lakeshore Hospital</td><td>Private</td><td>0484-2701032</td><td><span class="badge">24/7</span></td></tr>
+        <tr><td>Amrita Institute of Medical Sciences</td><td>Private</td><td>0484-2801234</td><td><span class="badge">24/7</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Disaster Management Offices -->
+  <div class="section">
+    <div class="section-title">🏛️ Disaster Management Offices</div>
+    <table class="hospital-table">
+      <thead>
+        <tr><th>Organisation</th><th>Role</th><th>Contact</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>NDMA — National Disaster Management Authority</td><td>National coordination</td><td>011-26701700</td></tr>
+        <tr><td>NDRF — National Disaster Response Force</td><td>Search & Rescue</td><td>011-24363260</td></tr>
+        <tr><td>Kerala SDMA</td><td>State disaster management</td><td>0471-2364424</td></tr>
+        <tr><td>IMD — Indian Meteorological Department</td><td>Weather & cyclone alerts</td><td>1800-180-1717</td></tr>
+        <tr><td>Red Cross India</td><td>Relief & rehabilitation</td><td>011-23716441</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const scenario = params.get('scenario');
+  if (!scenario) return;
+  fetch('/api/contacts/' + encodeURIComponent(scenario))
+    .then(r => r.json())
+    .then(data => {
+      if (!data.contacts || !data.contacts.length) return;
+      const grid = document.getElementById('scenario-contacts');
+      data.contacts.forEach(c => {
+        grid.innerHTML += `
+          <div class="contact-card">
+            <div class="icon">${c.icon || '📞'}</div>
+            <div class="name">${c.name}</div>
+            <div class="number">${c.number}</div>
+            <a href="tel:${c.number.replace(/[^0-9]/g,'')}" class="call-btn">📞 Call Now</a>
+          </div>`;
+      });
+      document.getElementById('scenario-section').style.display = '';
+      const label = scenario.charAt(0).toUpperCase() + scenario.slice(1);
+      document.getElementById('scenario-title').textContent = '📍 Relevant Contacts — ' + label + ' Emergency';
+    });
+})();
+</script>
+</body>
+</html>

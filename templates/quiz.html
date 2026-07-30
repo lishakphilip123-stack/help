@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emergency Quiz — Emergency Chatbot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+    header {
+      background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+      padding: 12px 24px; display: flex; align-items: center; gap: 12px;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    header p  { font-size: 0.72rem; opacity: 0.8; }
+    .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+    .nav-link {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; color: #fff; padding: 5px 12px;
+      font-size: 0.75rem; text-decoration: none; transition: background 0.2s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.2); }
+
+    .container { max-width: 680px; margin: 0 auto; padding: 28px 20px; }
+
+    .quiz-header { text-align: center; margin-bottom: 28px; }
+    .quiz-header .icon { font-size: 48px; margin-bottom: 10px; }
+    .quiz-header h2 { font-size: 1.2rem; margin-bottom: 6px; }
+    .quiz-header p  { font-size: 0.82rem; color: #8b949e; }
+
+    .progress-bar { background: #21262d; border-radius: 4px; height: 6px; margin-bottom: 24px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg, #b91c1c, #ef4444); border-radius: 4px; transition: width 0.4s; }
+    .progress-text { font-size: 0.72rem; color: #8b949e; text-align: right; margin-bottom: 6px; }
+
+    .question-card {
+      background: #161b22; border: 1px solid #30363d; border-radius: 14px;
+      padding: 24px; margin-bottom: 16px;
+    }
+    .q-meta { font-size: 0.7rem; color: #8b949e; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+    .q-text { font-size: 0.95rem; font-weight: 600; line-height: 1.5; margin-bottom: 18px; }
+
+    .options { display: flex; flex-direction: column; gap: 8px; }
+    .option-btn {
+      background: #21262d; border: 1px solid #30363d; border-radius: 10px;
+      color: #c9d1d9; padding: 11px 16px; font-size: 0.85rem;
+      cursor: pointer; text-align: left; transition: all 0.2s;
+      font-family: inherit;
+    }
+    .option-btn:hover:not(:disabled) { border-color: #58a6ff; background: #30363d; }
+    .option-btn.correct  { background: rgba(22,163,74,0.2); border-color: #16a34a; color: #86efac; }
+    .option-btn.wrong    { background: rgba(185,28,28,0.2); border-color: #b91c1c; color: #fca5a5; }
+    .option-btn:disabled { cursor: not-allowed; }
+
+    .explanation {
+      background: rgba(88,166,255,0.1); border: 1px solid #1f6feb;
+      border-radius: 8px; padding: 10px 14px;
+      font-size: 0.8rem; color: #93c5fd; line-height: 1.5;
+      margin-top: 12px; display: none;
+    }
+    .explanation.show { display: block; }
+
+    .nav-btns { display: flex; justify-content: flex-end; margin-top: 16px; }
+    .btn {
+      background: #b91c1c; border: none; border-radius: 8px; color: #fff;
+      padding: 10px 22px; font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s; font-family: inherit;
+    }
+    .btn:hover { background: #dc2626; }
+    .btn:disabled { background: #30363d; cursor: not-allowed; }
+
+    /* Result screen */
+    .result-card {
+      background: #161b22; border: 1px solid #30363d; border-radius: 14px;
+      padding: 32px; text-align: center; display: none;
+    }
+    .result-card.show { display: block; }
+    .result-card .score { font-size: 3rem; font-weight: 700; color: #ef4444; margin: 12px 0; }
+    .result-card .grade { font-size: 1rem; margin-bottom: 8px; }
+    .result-card p { font-size: 0.82rem; color: #8b949e; margin-bottom: 20px; }
+    .result-btns { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+    .btn-outline {
+      background: transparent; border: 1px solid #30363d; border-radius: 8px;
+      color: #c9d1d9; padding: 10px 22px; font-size: 0.85rem;
+      cursor: pointer; transition: all 0.2s; font-family: inherit; text-decoration: none;
+      display: inline-block;
+    }
+    .btn-outline:hover { border-color: #ef4444; color: #ef4444; }
+  </style>
+</head>
+<body>
+<header>
+  <div style="font-size:24px">🧠</div>
+  <div>
+    <h1>Emergency Awareness Quiz</h1>
+    <p>Test your emergency preparedness knowledge</p>
+  </div>
+  <div class="header-right">
+    <span style="font-size:0.75rem;color:rgba(255,255,255,0.7)">👤 {{ username }}</span>
+    <a href="/" class="nav-link">💬 Chatbot</a>
+    <a href="/logout" class="nav-link">Logout</a>
+  </div>
+</header>
+
+<div class="container">
+  <div class="quiz-header">
+    <div class="icon">🛡️</div>
+    <h2>Emergency Preparedness Quiz</h2>
+    <p>10 questions covering Flood, Fire, Earthquake, Medical & more</p>
+  </div>
+
+  <div class="progress-text" id="progress-text">Question 1 of 10</div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+
+  <div id="quiz-area">
+    <div class="question-card" id="question-card">
+      <div class="q-meta" id="q-meta"></div>
+      <div class="q-text" id="q-text"></div>
+      <div class="options" id="options"></div>
+      <div class="explanation" id="explanation"></div>
+    </div>
+    <div class="nav-btns">
+      <button class="btn" id="next-btn" onclick="nextQuestion()" disabled>Next →</button>
+    </div>
+  </div>
+
+  <div class="result-card" id="result-card">
+    <div style="font-size:48px" id="result-icon">🏆</div>
+    <div class="score" id="result-score"></div>
+    <div class="grade" id="result-grade"></div>
+    <p id="result-msg"></p>
+    <div class="result-btns">
+      <button class="btn" onclick="restartQuiz()">🔄 Try Again</button>
+      <a href="/" class="btn-outline">💬 Back to Chatbot</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const QUESTIONS = [
+    { scenario: "🌊 Flood", q: "What is the first thing you should do when your area is flooded?", options: ["Stay indoors and wait", "Move immediately to higher ground", "Drive to a safer location", "Call your neighbours first"], correct: 1, explanation: "Moving to higher ground immediately is the top priority. Floodwaters rise quickly and can be life-threatening." },
+    { scenario: "🔥 Fire", q: "What does PASS stand for when using a fire extinguisher?", options: ["Push, Aim, Squeeze, Spray", "Pull, Aim, Squeeze, Sweep", "Pull, Activate, Spray, Stop", "Press, Aim, Shoot, Sweep"], correct: 1, explanation: "PASS: Pull the pin, Aim at the base of the fire, Squeeze the handle, Sweep side to side." },
+    { scenario: "🏚️ Earthquake", q: "What is the correct action during an earthquake?", options: ["Run outside immediately", "Stand in a doorway", "Drop, Cover, and Hold On", "Call emergency services first"], correct: 2, explanation: "Drop, Cover, and Hold On is the internationally recommended action. Get under a sturdy table and protect your head and neck." },
+    { scenario: "🚑 Medical", q: "What is the ambulance emergency number in India?", options: ["100", "101", "108", "112"], correct: 2, explanation: "108 is the dedicated ambulance service number in India. 112 is the national emergency number that also connects to ambulance services." },
+    { scenario: "🌀 Cyclone", q: "What should you do during the 'eye' of a cyclone when it becomes calm?", options: ["Go outside to assess damage", "Stay sheltered — dangerous winds will return", "Start cleaning up debris", "Open windows to ventilate"], correct: 1, explanation: "The eye of a cyclone is deceptively calm. Dangerous winds return from the opposite direction when the eye passes. Stay sheltered." },
+    { scenario: "🌊 Flood", q: "How much fast-moving water can sweep away a vehicle?", options: ["30 cm", "60 cm", "1 metre", "2 metres"], correct: 1, explanation: "Just 60 cm (2 feet) of fast-moving water can sweep away most vehicles. Never drive through flooded roads." },
+    { scenario: "🔥 Fire", q: "What should you do if your clothes catch fire?", options: ["Run to find water", "Stop, Drop, and Roll", "Remove clothing immediately", "Call for help first"], correct: 1, explanation: "Stop, Drop, and Roll smothers the flames by cutting off oxygen. Running fans the flames and makes it worse." },
+    { scenario: "🚑 Medical", q: "What does FAST stand for in stroke recognition?", options: ["Face, Arms, Speech, Time", "Fever, Ache, Swelling, Treatment", "Fall, Assess, Support, Transfer", "Face, Alert, Stabilise, Transport"], correct: 0, explanation: "FAST: Face drooping, Arm weakness, Speech difficulty, Time to call 108. Note the time symptoms started — it's critical for treatment." },
+    { scenario: "⛰️ Landslide", q: "Which direction should you move to escape a landslide?", options: ["Downhill along the slide path", "Uphill and away from the slide", "Sideways out of the slide path", "Stay in your building"], correct: 2, explanation: "Move sideways out of the landslide path, then uphill. Moving uphill directly may be too slow. Never move downhill in the slide direction." },
+    { scenario: "🌡️ Heatwave", q: "What is the most dangerous heat-related condition?", options: ["Heat cramps", "Sunburn", "Heat exhaustion", "Heat stroke"], correct: 3, explanation: "Heat stroke is life-threatening — body temperature exceeds 40°C. It requires immediate medical attention. Call 108 immediately." }
+  ];
+
+  let current = 0;
+  let score   = 0;
+  let answered = false;
+
+  function loadQuestion() {
+    const q = QUESTIONS[current];
+    answered = false;
+    document.getElementById("q-meta").textContent = `${q.scenario} — Question ${current + 1} of ${QUESTIONS.length}`;
+    document.getElementById("q-text").textContent = q.q;
+    document.getElementById("explanation").className = "explanation";
+    document.getElementById("next-btn").disabled = true;
+    document.getElementById("progress-text").textContent = `Question ${current + 1} of ${QUESTIONS.length}`;
+    document.getElementById("progress-fill").style.width = `${((current + 1) / QUESTIONS.length) * 100}%`;
+
+    const optionsEl = document.getElementById("options");
+    optionsEl.innerHTML = q.options.map((opt, i) =>
+      `<button class="option-btn" onclick="selectAnswer(${i})">${String.fromCharCode(65 + i)}. ${opt}</button>`
+    ).join("");
+  }
+
+  function selectAnswer(index) {
+    if (answered) return;
+    answered = true;
+    const q = QUESTIONS[current];
+    const btns = document.querySelectorAll(".option-btn");
+    btns.forEach((btn, i) => {
+      btn.disabled = true;
+      if (i === q.correct) btn.classList.add("correct");
+      else if (i === index && index !== q.correct) btn.classList.add("wrong");
+    });
+    if (index === q.correct) score++;
+    document.getElementById("explanation").textContent = "💡 " + q.explanation;
+    document.getElementById("explanation").classList.add("show");
+    document.getElementById("next-btn").disabled = false;
+    document.getElementById("next-btn").textContent = current === QUESTIONS.length - 1 ? "See Results 🏆" : "Next →";
+  }
+
+  function nextQuestion() {
+    current++;
+    if (current >= QUESTIONS.length) { showResult(); return; }
+    loadQuestion();
+  }
+
+  function showResult() {
+    document.getElementById("quiz-area").style.display = "none";
+    const resultCard = document.getElementById("result-card");
+    resultCard.classList.add("show");
+    const pct = Math.round((score / QUESTIONS.length) * 100);
+    document.getElementById("result-score").textContent = `${score} / ${QUESTIONS.length}`;
+    let icon, grade, msg;
+    if (pct >= 90)      { icon = "🏆"; grade = "Excellent!";    msg = "Outstanding! You are very well prepared for emergencies."; }
+    else if (pct >= 70) { icon = "🥈"; grade = "Good Job!";     msg = "Good knowledge! Review the questions you missed to be fully prepared."; }
+    else if (pct >= 50) { icon = "🥉"; grade = "Keep Learning"; msg = "You have basic knowledge. Use the chatbot to learn more about emergency preparedness."; }
+    else                { icon = "📚"; grade = "Needs Practice"; msg = "Please explore the emergency scenarios in the chatbot to improve your preparedness."; }
+    document.getElementById("result-icon").textContent = icon;
+    document.getElementById("result-grade").textContent = grade;
+    document.getElementById("result-msg").textContent = msg;
+  }
+
+  function restartQuiz() {
+    current = 0; score = 0;
+    document.getElementById("quiz-area").style.display = "block";
+    document.getElementById("result-card").classList.remove("show");
+    loadQuestion();
+  }
+
+  loadQuestion();
+</script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{
+  "lishakphilip123@gmail.com": {
+    "firstname": "Lisha",
+    "lastname": "philip",
+    "phone": "9447362811",
+    "password": "2c2401c969fcc096cfd52a1ee312f52dc043034d1d717fd336636ceecc5736fa"
+  },
+  "arunchandv16@gmail.com": {
+    "firstname": "Arun",
+    "lastname": "V",
+    "phone": "",
+    "password": "4b0d068e9fd73b9a2a7e6d9226ae5831419ec3b25a4e6db5cdbc5ae0e3fc8c37"
+  },
+  "abhijith@gmail.com": {
+    "firstname": "Abhi",
+    "lastname": "jith",
+    "phone": "9876657988",
+    "password": "15e2b0d3c33891ebb0f1ef609ec419420c20e320ce94c65fbc8c3312448eb225"
+  }
+}

@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emergency Response Chatbot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5);
+      flex-shrink: 0;
+    }
+    header .logo { font-size: 26px; }
+    header h1 { font-size: 1rem; font-weight: 700; }
+    header p  { font-size: 0.7rem; opacity: 0.8; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .user-badge {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .logout-btn {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      color: #fff;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,0.2); }
+
+    /* ── Toolbar ── */
+    #toolbar {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 8px 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .scenario-btn {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #c9d1d9;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .scenario-btn:hover  { background: #30363d; border-color: #58a6ff; }
+    .scenario-btn.active { background: #b91c1c; border-color: #ef4444; color: #fff; font-weight: 600; }
+
+    /* Language selector */
+    #lang-select {
+      margin-left: auto;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #c9d1d9;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      outline: none;
+    }
+
+    /* ── Main layout ── */
+    main { flex: 1; display: flex; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 220px;
+      background: #161b22;
+      border-right: 1px solid #30363d;
+      padding: 14px;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    #sidebar h3 { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 1px; color: #8b949e; margin-bottom: 8px; }
+    .quick-btn {
+      display: block; width: 100%; text-align: left;
+      background: #21262d; border: 1px solid #30363d;
+      color: #c9d1d9; border-radius: 8px;
+      padding: 7px 9px; font-size: 0.75rem;
+      cursor: pointer; margin-bottom: 5px;
+      transition: background 0.2s; line-height: 1.4;
+      font-family: inherit;
+    }
+    .quick-btn:hover { background: #30363d; color: #fff; }
+
+    /* Emergency numbers */
+    .sos-box {
+      margin-top: 16px;
+      background: rgba(185,28,28,0.1);
+      border: 1px solid rgba(185,28,28,0.3);
+      border-radius: 8px;
+      padding: 10px;
+    }
+    .sos-box h4 { font-size: 0.68rem; color: #fca5a5; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+    .sos-num { font-size: 0.75rem; color: #fca5a5; margin-bottom: 3px; }
+    .sos-num strong { color: #ef4444; }
+
+    /* ── Chat area ── */
+    #chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    #messages {
+      flex: 1; overflow-y: auto;
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    /* Welcome card */
+    .welcome-card {
+      background: linear-gradient(135deg, #1c2128, #21262d);
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 20px; text-align: center;
+      max-width: 460px; margin: auto;
+    }
+    .welcome-card .icon { font-size: 44px; margin-bottom: 8px; }
+    .welcome-card h2 { font-size: 1rem; margin-bottom: 6px; }
+    .welcome-card p  { font-size: 0.8rem; color: #8b949e; line-height: 1.6; }
+    .welcome-card .user-greeting { color: #ef4444; font-weight: 600; }
+    .emergency-strip {
+      margin-top: 12px;
+      background: rgba(185,28,28,0.2);
+      border: 1px solid #b91c1c;
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 0.75rem; color: #fca5a5;
+    }
+
+    /* Message bubbles */
+    .msg { display: flex; gap: 8px; max-width: 82%; }
+    .msg.user { align-self: flex-end; flex-direction: row-reverse; }
+    .msg.bot  { align-self: flex-start; }
+    .avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+    }
+    .msg.user .avatar { background: #1f6feb; }
+    .msg.bot  .avatar { background: #b91c1c; }
+    .bubble {
+      padding: 9px 13px; border-radius: 12px;
+      font-size: 0.85rem; line-height: 1.6; max-width: 100%;
+    }
+    .msg.user .bubble { background: #1f6feb; color: #fff; border-bottom-right-radius: 4px; }
+    .msg.bot  .bubble { background: #21262d; border: 1px solid #30363d; border-bottom-left-radius: 4px; }
+
+    .meta { font-size: 0.66rem; color: #8b949e; margin-top: 3px; display: flex; gap: 8px; align-items: center; }
+    .msg.user .meta { justify-content: flex-end; }
+
+    /* Severity badge */
+    .severity-badge {
+      font-size: 0.66rem; padding: 1px 7px;
+      border-radius: 10px; font-weight: 600;
+    }
+    .severity-critical { background: rgba(185,28,28,0.3); color: #fca5a5; border: 1px solid #b91c1c; }
+    .severity-moderate { background: rgba(202,138,4,0.3); color: #fde68a; border: 1px solid #ca8a04; }
+    .severity-safe     { background: rgba(22,163,74,0.3); color: #86efac; border: 1px solid #16a34a; }
+
+    /* Confidence bar */
+    .confidence-bar {
+      height: 3px; border-radius: 2px;
+      background: #30363d; margin-top: 5px; overflow: hidden;
+    }
+    .confidence-fill { height: 100%; border-radius: 2px; transition: width 0.4s; }
+
+    /* Fallback card */
+    .fallback-card {
+      background: #21262d; border: 1px solid #30363d;
+      border-radius: 10px; padding: 12px; margin-top: 6px;
+    }
+    .fallback-card p { font-size: 0.8rem; color: #8b949e; margin-bottom: 8px; }
+    .fallback-topics { display: flex; flex-wrap: wrap; gap: 6px; }
+    .fallback-topic {
+      background: #161b22; border: 1px solid #30363d;
+      border-radius: 16px; padding: 4px 10px;
+      font-size: 0.75rem; color: #c9d1d9;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .fallback-topic:hover { border-color: #ef4444; color: #ef4444; }
+
+    /* Image preview in chat */
+    .img-preview {
+      max-width: 220px; max-height: 160px;
+      border-radius: 8px; border: 1px solid #30363d;
+      display: block; margin-bottom: 6px;
+    }
+
+    /* TTS button */
+    .tts-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 14px; color: #8b949e; padding: 0;
+      transition: color 0.2s;
+    }
+    .tts-btn:hover { color: #ef4444; }
+
+    /* Typing indicator */
+    .typing .bubble { display: flex; align-items: center; gap: 5px; padding: 12px 16px; }
+    .dot { width: 6px; height: 6px; background: #8b949e; border-radius: 50%; animation: bounce 1.2s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
+
+    /* ── Input bar ── */
+    #input-bar {
+      background: #161b22;
+      border-top: 1px solid #30363d;
+      padding: 10px 14px;
+      display: flex; gap: 8px; align-items: flex-end;
+      flex-shrink: 0;
+    }
+    #user-input {
+      flex: 1;
+      background: #21262d; border: 1px solid #30363d;
+      border-radius: 10px; color: #e6edf3;
+      padding: 9px 13px; font-size: 0.85rem;
+      resize: none; max-height: 120px;
+      outline: none; transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    #user-input:focus { border-color: #58a6ff; }
+    #user-input::placeholder { color: #484f58; }
+
+    .icon-btn {
+      border: 1px solid #30363d; border-radius: 10px;
+      width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; cursor: pointer; transition: all 0.2s;
+      flex-shrink: 0; background: #21262d; color: #8b949e;
+    }
+    .icon-btn:hover { border-color: #ef4444; color: #ef4444; }
+    .icon-btn.recording { background: #b91c1c; border-color: #ef4444; color: #fff; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.6} }
+
+    #send-btn {
+      background: #b91c1c; border: none; border-radius: 10px;
+      color: #fff; width: 40px; height: 40px;
+      cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s; flex-shrink: 0;
+    }
+    #send-btn:hover:not(:disabled) { background: #dc2626; }
+    #send-btn:disabled { background: #30363d; cursor: not-allowed; }
+
+    /* Nav links */
+    .nav-link {
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; color: #fff;
+      padding: 4px 10px; font-size: 0.72rem;
+      text-decoration: none; transition: background 0.2s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.2); }
+
+    /* SOS Modal */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 100;
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: #161b22; border: 1px solid #30363d;
+      border-radius: 14px; padding: 24px;
+      width: 100%; max-width: 480px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal h3 { font-size: 1rem; margin-bottom: 16px; }
+    .modal label { display: block; font-size: 0.75rem; color: #8b949e; margin-bottom: 5px; margin-top: 12px; }
+    .modal input, .modal textarea, .modal select {
+      width: 100%; background: #21262d; border: 1px solid #30363d;
+      border-radius: 8px; color: #e6edf3; padding: 8px 12px;
+      font-size: 0.82rem; outline: none; font-family: inherit;
+    }
+    .modal textarea { resize: vertical; min-height: 60px; }
+    .modal-btns { display: flex; gap: 8px; margin-top: 16px; }
+    .sos-result {
+      background: rgba(185,28,28,0.15); border: 1px solid #b91c1c;
+      border-radius: 8px; padding: 12px; margin-top: 14px;
+      font-size: 0.82rem; line-height: 1.6; white-space: pre-wrap;
+      display: none;
+    }
+    .sos-result.show { display: block; }
+
+    /* Checklist Modal */
+    .checklist-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid #30363d;
+      font-size: 0.85rem;
+    }
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-item input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #ef4444; }
+    .checklist-item label { cursor: pointer; flex: 1; }
+    .checklist-item.checked label { text-decoration: line-through; color: #8b949e; }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
+
+    /* Voice status bar */
+    #voice-status {
+      display: none;
+      position: fixed;
+      bottom: 70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(185,28,28,0.92);
+      color: #fff;
+      padding: 8px 22px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      z-index: 300;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      animation: fadeInUp 0.2s ease;
+    }
+    @keyframes fadeInUp {
+      from { opacity:0; transform: translateX(-50%) translateY(10px); }
+      to   { opacity:1; transform: translateX(-50%) translateY(0); }
+    }
+    @media (max-width: 640px) {
+      #voice-status { bottom: 80px; font-size: 0.78rem; }
+    }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 640px) {
+      body { height: 100dvh; }
+
+      header { padding: 8px 12px; }
+      header h1 { font-size: 0.85rem; }
+      header p { display: none; }
+      .user-badge { display: none; }
+      .nav-link { display: none; }
+      .logout-btn { display: none; }
+
+      #toolbar { padding: 6px 10px; gap: 5px; }
+      .scenario-btn { padding: 4px 9px; font-size: 0.7rem; }
+      #lang-select { font-size: 0.7rem; padding: 3px 7px; }
+
+      #sidebar { display: none; }
+      #sidebar.open {
+        display: flex; flex-direction: column;
+        position: fixed; left: 0; top: 0; bottom: 0;
+        width: 80%; max-width: 280px;
+        z-index: 200; background: #161b22;
+        border-right: 1px solid #30363d;
+        padding: 16px; overflow-y: auto;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.6);
+        animation: slideIn 0.2s ease;
+      }
+      @keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+
+      #drawer-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.5); z-index: 199;
+      }
+      #drawer-overlay.show { display: block; }
+
+      .msg { max-width: 95%; }
+      .bubble { font-size: 0.82rem; }
+
+      #input-bar { padding: 8px 10px; gap: 6px; padding-bottom: calc(8px + env(safe-area-inset-bottom)); }
+      #user-input { font-size: 0.82rem; padding: 8px 11px; }
+      .icon-btn { width: 36px; height: 36px; font-size: 15px; }
+      #send-btn { width: 36px; height: 36px; font-size: 15px; }
+
+      /* Bottom mobile nav */
+      #mobile-nav {
+        display: flex;
+        position: fixed; bottom: 0; left: 0; right: 0;
+        background: #161b22;
+        border-top: 1px solid #30363d;
+        padding: 6px 0;
+        padding-bottom: calc(6px + env(safe-area-inset-bottom));
+        z-index: 100;
+        justify-content: space-around;
+      }
+      .mnav-btn {
+        display: flex; flex-direction: column; align-items: center;
+        gap: 2px; background: none; border: none;
+        color: #8b949e; font-size: 0.6rem; cursor: pointer;
+        padding: 4px 8px; border-radius: 8px;
+        text-decoration: none;
+        transition: color 0.2s;
+      }
+      .mnav-btn span.icon { font-size: 20px; }
+      .mnav-btn:hover, .mnav-btn.active { color: #ef4444; }
+
+      /* Push chat area above bottom nav */
+      #chat-area { padding-bottom: 60px; }
+
+      .modal { padding: 16px; }
+      .modal h3 { font-size: 0.9rem; }
+    }
+
+    /* Hide mobile nav on desktop */
+    #mobile-nav { display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Drawer overlay (mobile) -->
+<div id="drawer-overlay" onclick="closeSidebar()"></div>
+
+<!-- Header -->
+<header>
+  <button id="hamburger" onclick="toggleSidebar()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:0;display:none;">☰</button>
+  <div class="logo">🆘</div>
+  <div>
+    <h1 data-i18n="appTitle">Emergency Response Chatbot</h1>
+    <p data-i18n="appSubtitle">Public Safety Information System — India</p>
+  </div>
+  <div class="header-right">
+    <div class="user-badge">👤 {{ username }}</div>
+    <a href="/contacts" class="nav-link" data-i18n="navContacts">📞 Contacts</a>
+    <a href="/quiz" class="nav-link" data-i18n="navQuiz">🧠 Quiz</a>
+    <a href="/admin" class="nav-link" data-i18n="navAdmin">⚙️ Admin</a>
+    <a href="/logout" class="logout-btn" data-i18n="navLogout">Logout</a>
+  </div>
+</header>
+
+<!-- Toolbar: scenarios + language -->
+<div id="toolbar">
+  <button class="scenario-btn active" data-tag="" data-i18n="scenarioAll">🌐 All</button>
+  {% for tag, s in scenarios.items() %}
+  <button class="scenario-btn" data-tag="{{ tag }}">{{ s.icon }} <span data-i18n="scenario_{{ tag }}">{{ s.label }}</span></button>
+  {% endfor %}
+  <select id="lang-select" title="Select Language">
+    <option value="English">🇬🇧 English</option>
+    <option value="Malayalam">🇮🇳 Malayalam</option>
+    <option value="Hindi">🇮🇳 Hindi</option>
+    <option value="Tamil">🇮🇳 Tamil</option>
+    <option value="Telugu">🇮🇳 Telugu</option>
+    <option value="Kannada">🇮🇳 Kannada</option>
+  </select>
+</div>
+
+<main>
+  <!-- Sidebar -->
+  <aside id="sidebar">
+    <h3 data-i18n="quickQuestions">Quick Questions</h3>
+    <div id="quick-questions"></div>
+    <div class="sos-box">
+      <h4 data-i18n="emergencyNumbers">🚨 Emergency Numbers</h4>
+      <div class="sos-num"><span data-i18n="numNational">National Emergency</span>: <strong>112</strong></div>
+      <div class="sos-num"><span data-i18n="numPolice">Police</span>: <strong>100</strong></div>
+      <div class="sos-num"><span data-i18n="numFire">Fire</span>: <strong>101</strong></div>
+      <div class="sos-num"><span data-i18n="numAmbulance">Ambulance</span>: <strong>108</strong></div>
+      <div class="sos-num"><span data-i18n="numDisaster">Disaster</span>: <strong>1077</strong></div>
+    </div>
+  </aside>
+
+  <!-- Chat -->
+  <div id="chat-area">
+    <div id="messages">
+      <div class="welcome-card" id="welcome-card">
+        <div class="icon">🛡️</div>
+        <h2><span data-i18n="welcomeHello">Hello</span>, <span class="user-greeting">{{ username }}</span>!</h2>
+        <p data-i18n="welcomeDesc">Ask me anything about emergency preparedness, evacuation, first aid, or disaster response. Select a scenario above for focused guidance.</p>
+        <div class="emergency-strip"><span data-i18n="emergencyCall">🚨 For immediate life-threatening emergencies, call</span> <strong>112</strong></div>
+      </div>
+    </div>
+
+    <div id="input-bar">
+      <textarea id="user-input" rows="1" data-i18n-placeholder="inputPlaceholder" placeholder="Type your emergency question here…"></textarea>
+      <input type="file" id="img-input" accept="image/*" style="display:none"/>
+      <button class="icon-btn" id="img-btn" title="Upload Image">📷</button>
+      <button class="icon-btn" id="mic-btn" data-i18n-title="titleVoice" title="Voice Input">🎙️</button>
+      <button class="icon-btn" id="mute-btn" data-i18n-title="titleMute" title="Auto-speak ON" onclick="toggleMute()">🔊</button>
+      <button class="icon-btn" data-i18n-title="titleSOS" title="SOS Generator" onclick="document.getElementById('sos-modal').classList.add('show')">🆘</button>
+      <button class="icon-btn" data-i18n-title="titleChecklist" title="Emergency Checklist" onclick="openChecklist()">✅</button>
+      <button class="icon-btn" id="clear-btn" data-i18n-title="titleClear" title="Clear chat">🗑️</button>
+      <button id="send-btn" data-i18n-title="titleSend" title="Send">➤</button>
+    </div>
+  </div>
+</main>
+
+<!-- SOS Modal -->
+<div class="modal-overlay" id="sos-modal">
+  <div class="modal">
+    <h3 data-i18n="sosTitle">🆘 SOS Message Generator</h3>
+    <label data-i18n="sosLabelSituation">Describe the emergency situation *</label>
+    <textarea id="sos-situation" data-i18n-placeholder="sosPlaceholderSituation" placeholder="e.g. My house is flooding, water level rising fast"></textarea>
+    <label data-i18n="sosLabelLocation">Your Location</label>
+    <input type="text" id="sos-location" data-i18n-placeholder="sosPlaceholderLocation" placeholder="e.g. 12 MG Road, Kochi, Kerala"/>
+    <label data-i18n="sosLabelPeople">Number of people</label>
+    <input type="number" id="sos-people" value="1" min="1"/>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px">
+      <input type="checkbox" id="sos-medical" style="width:16px;height:16px"/> <span data-i18n="sosMedical">Medical assistance required</span>
+    </label>
+    <div class="modal-btns">
+      <button class="btn" onclick="generateSOS()" data-i18n="sosGenerate">Generate SOS</button>
+      <button class="btn" style="background:#30363d" onclick="document.getElementById('sos-modal').classList.remove('show')" data-i18n="btnClose">Close</button>
+    </div>
+    <div class="sos-result" id="sos-result"></div>
+    <button id="sos-copy-btn" class="btn" style="display:none;margin-top:8px;background:#1f6feb" onclick="copySOSMessage()" data-i18n="sosCopy">📋 Copy Message</button>
+  </div>
+</div>
+
+<!-- Checklist Modal -->
+<div class="modal-overlay" id="checklist-modal">
+  <div class="modal">
+    <h3 data-i18n="checklistTitle">✅ Emergency Checklist</h3>
+    <p style="font-size:0.78rem;color:#8b949e;margin-bottom:14px" id="checklist-scenario-label"></p>
+    <div id="checklist-items"></div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn" onclick="resetChecklist()" data-i18n="btnReset">Reset</button>
+      <button class="btn" style="background:#30363d" onclick="document.getElementById('checklist-modal').classList.remove('show')" data-i18n="btnClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Voice Status Bar -->
+<div id="voice-status"></div>
+
+<!-- Mobile Bottom Nav -->
+<nav id="mobile-nav">
+  <button class="mnav-btn active" onclick="toggleSidebar()"><span class="icon">💬</span>Chat</button>
+  <a href="/contacts" class="mnav-btn"><span class="icon">📞</span>Contacts</a>
+  <a href="/quiz" class="mnav-btn"><span class="icon">🧠</span>Quiz</a>
+  <button class="mnav-btn" onclick="document.getElementById('sos-modal').classList.add('show')"><span class="icon">🆘</span>SOS</button>
+  <a href="/logout" class="mnav-btn"><span class="icon">🚪</span>Logout</a>
+</nav>
+
+<script>
+  const QUICK_QUESTIONS = {
+    "": ["What are the key emergency numbers in India?", "What should every emergency kit contain?", "How do I make an emergency plan for my family?", "What should I do if I witness an accident?"],
+    flood: ["What should I do if my area is flooded?", "Is it safe to drive through flooded roads?", "Where are flood relief camps located?", "What do I do after floodwaters recede?"],
+    fire: ["What should I do if there is a fire in my building?", "How do I use a fire extinguisher?", "What should I do if I smell gas at home?", "How do I treat a minor burn?"],
+    earthquake: ["What should I do during an earthquake?", "What should I do if I am trapped under debris?", "What causes aftershocks?", "How do I turn off utilities after an earthquake?"],
+    cyclone: ["What should I do when a cyclone warning is issued?", "What should I do during the eye of a cyclone?", "Where are cyclone shelters located?", "How do I understand cyclone warning categories?"],
+    medical: ["What is the medical emergency number?", "How do I perform CPR?", "What should I do if someone has a stroke?", "What is the first aid for heat stroke?"],
+    chemical: ["What should I do if there is a chemical spill near my area?", "How do I protect myself from chemical fumes?", "What should I do if I am exposed to a chemical substance?", "How do I shelter in place during a chemical emergency?"],
+    general: ["What are the key emergency numbers in India?", "What is NDMA and how can it help?", "How do I report a missing person during a disaster?", "What mental health support is available after a disaster?"]
+  };
+
+  let currentScenario = "";
+  let currentLanguage = "English";
+  let chatHistory = [];
+  let recognition = null;
+  let isRecording = false;
+  let autoSpeak = true;  // auto-speak ON by default
+
+  const messagesEl = document.getElementById("messages");
+  const inputEl    = document.getElementById("user-input");
+  const sendBtn    = document.getElementById("send-btn");
+  const clearBtn   = document.getElementById("clear-btn");
+  const micBtn     = document.getElementById("mic-btn");
+  const quickEl    = document.getElementById("quick-questions");
+  const langSelect = document.getElementById("lang-select");
+
+  // ── Scenario switching ──────────────────────────────────────────────────
+  document.querySelectorAll(".scenario-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".scenario-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      currentScenario = btn.dataset.tag;
+      renderQuickQuestions();
+    });
+  });
+
+  const TRANSLATIONS = {
+    English: {
+      appTitle:"Emergency Response Chatbot", appSubtitle:"Public Safety Information System — India",
+      navContacts:"📞 Contacts", navQuiz:"🧠 Quiz", navAdmin:"⚙️ Admin", navLogout:"Logout",
+      scenarioAll:"🌐 All", quickQuestions:"Quick Questions", emergencyNumbers:"🚨 Emergency Numbers",
+      numNational:"National Emergency", numPolice:"Police", numFire:"Fire", numAmbulance:"Ambulance", numDisaster:"Disaster",
+      welcomeHello:"Hello", welcomeDesc:"Ask me anything about emergency preparedness, evacuation, first aid, or disaster response. Select a scenario above for focused guidance.",
+      emergencyCall:"🚨 For immediate life-threatening emergencies, call",
+      inputPlaceholder:"Type your emergency question here…",
+      titleVoice:"Voice Input", titleMute:"Auto-speak ON", titleSOS:"SOS Generator", titleChecklist:"Emergency Checklist", titleClear:"Clear chat", titleSend:"Send",
+      sosTitle:"🆘 SOS Message Generator", sosLabelSituation:"Describe the emergency situation *", sosPlaceholderSituation:"e.g. My house is flooding, water level rising fast",
+      sosLabelLocation:"Your Location", sosPlaceholderLocation:"e.g. 12 MG Road, Kochi, Kerala", sosLabelPeople:"Number of people",
+      sosMedical:"Medical assistance required", sosGenerate:"Generate SOS", btnClose:"Close", sosCopy:"📋 Copy Message",
+      checklistTitle:"✅ Emergency Checklist", btnReset:"Reset",
+      scenario_flood:"Flood", scenario_fire:"Fire", scenario_earthquake:"Earthquake", scenario_cyclone:"Cyclone",
+      scenario_medical:"Medical", scenario_chemical:"Chemical", scenario_landslide:"Landslide", scenario_heatwave:"Heatwave", scenario_general:"General"
+    },
+    Malayalam: {
+      appTitle:"അടിയന്തര പ്രതികരണ ചാറ്റ്ബോട്ട്", appSubtitle:"പൊതു സുരക്ഷാ വിവര സംവിധാനം — ഇന്ത്യ",
+      navContacts:"📞 കോൺടാക്ടുകൾ", navQuiz:"🧠 ക്വിസ്", navAdmin:"⚙️ അഡ്മിൻ", navLogout:"ലോഗൗട്ട്",
+      scenarioAll:"🌐 എല്ലാം", quickQuestions:"ദ്രുത ചോദ്യങ്ങൾ", emergencyNumbers:"🚨 അടിയന്തര നമ്പറുകൾ",
+      numNational:"ദേശീയ അടിയന്തരം", numPolice:"പോലീസ്", numFire:"അഗ്നിശമനം", numAmbulance:"ആംബുലൻസ്", numDisaster:"ദുരന്ത സഹായം",
+      welcomeHello:"ഹലോ", welcomeDesc:"അടിയന്തര തയ്യാറെടുപ്പ്, ഒഴിപ്പിക്കൽ, പ്രഥമ ചികിത്സ, ദുരന്ത നിവാരണം എന്നിവയെ കുറിച്ച് ചോദിക്കൂ.",
+      emergencyCall:"🚨 ജീവൻ അപകടത്തിലാണെങ്കിൽ വിളിക്കൂ",
+      inputPlaceholder:"നിങ്ങളുടെ അടിയന്തര ചോദ്യം ഇവിടെ ടൈപ്പ് ചെയ്യൂ…",
+      titleVoice:"ശബ്ദ ഇൻപുട്ട്", titleMute:"ഓട്ടോ-സ്പീക്ക് ഓൺ", titleSOS:"SOS ജനറേറ്റർ", titleChecklist:"അടിയന്തര ചെക്ക്ലിസ്റ്റ്", titleClear:"ചാറ്റ് മായ്ക്കുക", titleSend:"അയക്കുക",
+      sosTitle:"🆘 SOS സന്ദേശ ജനറേറ്റർ", sosLabelSituation:"അടിയന്തര സ്ഥിതി വിവരിക്കൂ *", sosPlaceholderSituation:"ഉദാ: എന്റെ വീട്ടിൽ വെള്ളം കയറുന്നു",
+      sosLabelLocation:"നിങ്ങളുടെ സ്ഥലം", sosPlaceholderLocation:"ഉദാ: MG റോഡ്, കൊച്ചി, കേരളം", sosLabelPeople:"ആളുകളുടെ എണ്ണം",
+      sosMedical:"വൈദ്യ സഹായം ആവശ്യമാണ്", sosGenerate:"SOS ഉണ്ടാക്കുക", btnClose:"അടയ്ക്കുക", sosCopy:"📋 സന്ദേശം കോപ്പി ചെയ്യുക",
+      checklistTitle:"✅ അടിയന്തര ചെക്ക്ലിസ്റ്റ്", btnReset:"റീസെറ്റ്",
+      scenario_flood:"വെള്ളപ്പൊക്കം", scenario_fire:"തീ", scenario_earthquake:"ഭൂകമ്പം", scenario_cyclone:"ചുഴലിക്കാറ്റ്",
+      scenario_medical:"വൈദ്യം", scenario_chemical:"രാസ", scenario_landslide:"മണ്ണിടിച്ചിൽ", scenario_heatwave:"ചൂടലൈ", scenario_general:"പൊതു"
+    },
+    Hindi: {
+      appTitle:"आपातकालीन प्रतिक्रिया चैटबॉट", appSubtitle:"सार्वजनिक सुरक्षा सूचना प्रणाली — भारत",
+      navContacts:"📞 संपर्क", navQuiz:"🧠 क्विज़", navAdmin:"⚙️ एडमिन", navLogout:"लॉगआउट",
+      scenarioAll:"🌐 सभी", quickQuestions:"त्वरित प्रश्न", emergencyNumbers:"🚨 आपातकालीन नंबर",
+      numNational:"राष्ट्रीय आपातकाल", numPolice:"पुलिस", numFire:"अग्निशमन", numAmbulance:"एम्बुलेंस", numDisaster:"आपदा सहायता",
+      welcomeHello:"नमस्ते", welcomeDesc:"आपातकालीन तैयारी, निकासी, प्राथमिक चिकित्सा या आपदा प्रतिक्रिया के बारे में कुछ भी पूछें।",
+      emergencyCall:"🚨 जीवन-घातक आपात स्थिति में कॉल करें",
+      inputPlaceholder:"अपना आपातकालीन प्रश्न यहाँ टाइप करें…",
+      titleVoice:"वॉयस इनपुट", titleMute:"ऑटो-स्पीक चालू", titleSOS:"SOS जनरेटर", titleChecklist:"आपातकालीन चेकलिस्ट", titleClear:"चैट साफ़ करें", titleSend:"भेजें",
+      sosTitle:"🆘 SOS संदेश जनरेटर", sosLabelSituation:"आपातकालीन स्थिति का वर्णन करें *", sosPlaceholderSituation:"जैसे: मेरे घर में बाढ़ आ रही है",
+      sosLabelLocation:"आपका स्थान", sosPlaceholderLocation:"जैसे: MG रोड, कोच्चि, केरल", sosLabelPeople:"लोगों की संख्या",
+      sosMedical:"चिकित्सा सहायता आवश्यक है", sosGenerate:"SOS बनाएं", btnClose:"बंद करें", sosCopy:"📋 संदेश कॉपी करें",
+      checklistTitle:"✅ आपातकालीन चेकलिस्ट", btnReset:"रीसेट",
+      scenario_flood:"बाढ़", scenario_fire:"आग", scenario_earthquake:"भूकंप", scenario_cyclone:"चक्रवात",
+      scenario_medical:"चिकित्सा", scenario_chemical:"रासायनिक", scenario_landslide:"भूस्खलन", scenario_heatwave:"लू", scenario_general:"सामान्य"
+    },
+    Tamil: {
+      appTitle:"அவசர நிலை சாட்பாட்", appSubtitle:"பொது பாதுகாப்பு தகவல் அமைப்பு — இந்தியா",
+      navContacts:"📞 தொடர்புகள்", navQuiz:"🧠 வினாடி வினா", navAdmin:"⚙️ நிர்வாகி", navLogout:"வெளியேறு",
+      scenarioAll:"🌐 அனைத்தும்", quickQuestions:"விரைவு கேள்விகள்", emergencyNumbers:"🚨 அவசர எண்கள்",
+      numNational:"தேசிய அவசரநிலை", numPolice:"காவல்துறை", numFire:"தீயணைப்பு", numAmbulance:"ஆம்புலன்ஸ்", numDisaster:"பேரிடர் உதவி",
+      welcomeHello:"வணக்கம்", welcomeDesc:"அவசர தயாரிப்பு, வெளியேற்றம், முதலுதவி அல்லது பேரிடர் மேலாண்மை பற்றி கேளுங்கள்.",
+      emergencyCall:"🚨 உயிருக்கு ஆபத்தான அவசரநிலையில் அழைக்கவும்",
+      inputPlaceholder:"உங்கள் அவசர கேள்வியை இங்கே தட்டச்சு செய்யுங்கள்…",
+      titleVoice:"குரல் உள்ளீடு", titleMute:"தானியங்கி பேச்சு இயக்கம்", titleSOS:"SOS உருவாக்கி", titleChecklist:"அவசர சரிபார்ப்பு பட்டியல்", titleClear:"அரட்டையை அழி", titleSend:"அனுப்பு",
+      sosTitle:"🆘 SOS செய்தி உருவாக்கி", sosLabelSituation:"அவசர நிலையை விவரிக்கவும் *", sosPlaceholderSituation:"எ.கா: என் வீட்டில் வெள்ளம் வருகிறது",
+      sosLabelLocation:"உங்கள் இடம்", sosPlaceholderLocation:"எ.கா: MG ரோடு, கொச்சி, கேரளா", sosLabelPeople:"நபர்களின் எண்ணிக்கை",
+      sosMedical:"மருத்துவ உதவி தேவை", sosGenerate:"SOS உருவாக்கு", btnClose:"மூடு", sosCopy:"📋 செய்தியை நகலெடு",
+      checklistTitle:"✅ அவசர சரிபார்ப்பு பட்டியல்", btnReset:"மீட்டமை",
+      scenario_flood:"வெள்ளம்", scenario_fire:"தீ", scenario_earthquake:"நிலநடுக்கம்", scenario_cyclone:"சூறாவளி",
+      scenario_medical:"மருத்துவம்", scenario_chemical:"இரசாயனம்", scenario_landslide:"நிலச்சரிவு", scenario_heatwave:"வெப்ப அலை", scenario_general:"பொது"
+    },
+    Telugu: {
+      appTitle:"అత్యవసర స్పందన చాట్బాట్", appSubtitle:"పబ్లిక్ సేఫ్టీ ఇన్ఫర్మేషన్ సిస్టమ్ — భారతదేశం",
+      navContacts:"📞 సంప్రదింపులు", navQuiz:"🧠 క్విజ్", navAdmin:"⚙️ అడ్మిన్", navLogout:"లాగ్అవుట్",
+      scenarioAll:"🌐 అన్నీ", quickQuestions:"త్వరిత ప్రశ్నలు", emergencyNumbers:"🚨 అత్యవసర నంబర్లు",
+      numNational:"జాతీయ అత్యవసరం", numPolice:"పోలీసు", numFire:"అగ్నిమాపక", numAmbulance:"యాంబులెన్స్", numDisaster:"విపత్తు సహాయం",
+      welcomeHello:"నమస్కారం", welcomeDesc:"అత్యవసర సంసిద్ధత, తరలింపు, ప్రథమ చికిత్స లేదా విపత్తు నిర్వహణ గురించి అడగండి.",
+      emergencyCall:"🚨 ప్రాణాంతక అత్యవసర పరిస్థితిలో కాల్ చేయండి",
+      inputPlaceholder:"మీ అత్యవసర ప్రశ్నను ఇక్కడ టైప్ చేయండి…",
+      titleVoice:"వాయిస్ ఇన్పుట్", titleMute:"ఆటో-స్పీక్ ఆన్", titleSOS:"SOS జనరేటర్", titleChecklist:"అత్యవసర చెక్లిస్ట్", titleClear:"చాట్ క్లియర్ చేయి", titleSend:"పంపు",
+      sosTitle:"🆘 SOS సందేశ జనరేటర్", sosLabelSituation:"అత్యవసర పరిస్థితిని వివరించండి *", sosPlaceholderSituation:"ఉదా: నా ఇంట్లో వరద వస్తోంది",
+      sosLabelLocation:"మీ స్థానం", sosPlaceholderLocation:"ఉదా: MG రోడ్, కొచ్చి, కేరళ", sosLabelPeople:"వ్యక్తుల సంఖ్య",
+      sosMedical:"వైద్య సహాయం అవసరం", sosGenerate:"SOS రూపొందించు", btnClose:"మూసివేయి", sosCopy:"📋 సందేశాన్ని కాపీ చేయి",
+      checklistTitle:"✅ అత్యవసర చెక్లిస్ట్", btnReset:"రీసెట్",
+      scenario_flood:"వరద", scenario_fire:"అగ్ని", scenario_earthquake:"భూకంపం", scenario_cyclone:"తుఫాను",
+      scenario_medical:"వైద్యం", scenario_chemical:"రసాయన", scenario_landslide:"కొండచరియలు", scenario_heatwave:"వేడి అలలు", scenario_general:"సాధారణ"
+    },
+    Kannada: {
+      appTitle:"ತುರ್ತು ಪ್ರತಿಕ್ರಿಯೆ ಚಾಟ್ಬಾಟ್", appSubtitle:"ಸಾರ್ವಜನಿಕ ಸುರಕ್ಷತಾ ಮಾಹಿತಿ ವ್ಯವಸ್ಥೆ — ಭಾರತ",
+      navContacts:"📞 ಸಂಪರ್ಕಗಳು", navQuiz:"🧠 ಕ್ವಿಜ್", navAdmin:"⚙️ ಅಡ್ಮಿನ್", navLogout:"ಲಾಗ್ಔಟ್",
+      scenarioAll:"🌐 ಎಲ್ಲಾ", quickQuestions:"ತ್ವರಿತ ಪ್ರಶ್ನೆಗಳು", emergencyNumbers:"🚨 ತುರ್ತು ಸಂಖ್ಯೆಗಳು",
+      numNational:"ರಾಷ್ಟ್ರೀಯ ತುರ್ತು", numPolice:"ಪೊಲೀಸ್", numFire:"ಅಗ್ನಿಶಾಮಕ", numAmbulance:"ಆಂಬ್ಯುಲೆನ್ಸ್", numDisaster:"ವಿಪತ್ತು ಸಹಾಯ",
+      welcomeHello:"ನಮಸ್ಕಾರ", welcomeDesc:"ತುರ್ತು ಸಿದ್ಧತೆ, ಸ್ಥಳಾಂತರ, ಪ್ರಥಮ ಚಿಕಿತ್ಸೆ ಅಥವಾ ವಿಪತ್ತು ನಿರ್ವಹಣೆ ಬಗ್ಗೆ ಕೇಳಿ.",
+      emergencyCall:"🚨 ಜೀವಕ್ಕೆ ಅಪಾಯವಿದ್ದರೆ ಕರೆ ಮಾಡಿ",
+      inputPlaceholder:"ನಿಮ್ಮ ತುರ್ತು ಪ್ರಶ್ನೆಯನ್ನು ಇಲ್ಲಿ ಟೈಪ್ ಮಾಡಿ…",
+      titleVoice:"ಧ್ವನಿ ಇನ್ಪುಟ್", titleMute:"ಆಟೋ-ಸ್ಪೀಕ್ ಆನ್", titleSOS:"SOS ಜನರೇಟರ್", titleChecklist:"ತುರ್ತು ಪರಿಶೀಲನಾ ಪಟ್ಟಿ", titleClear:"ಚಾಟ್ ತೆರವುಗೊಳಿಸಿ", titleSend:"ಕಳುಹಿಸಿ",
+      sosTitle:"🆘 SOS ಸಂದೇಶ ಜನರೇಟರ್", sosLabelSituation:"ತುರ್ತು ಪರಿಸ್ಥಿತಿಯನ್ನು ವಿವರಿಸಿ *", sosPlaceholderSituation:"ಉದಾ: ನನ್ನ ಮನೆಯಲ್ಲಿ ನೆರೆ ಬರುತ್ತಿದೆ",
+      sosLabelLocation:"ನಿಮ್ಮ ಸ್ಥಳ", sosPlaceholderLocation:"ಉದಾ: MG ರಸ್ತೆ, ಕೊಚ್ಚಿ, ಕೇರಳ", sosLabelPeople:"ಜನರ ಸಂಖ್ಯೆ",
+      sosMedical:"ವೈದ್ಯಕೀಯ ಸಹಾಯ ಅಗತ್ಯ", sosGenerate:"SOS ರಚಿಸಿ", btnClose:"ಮುಚ್ಚಿ", sosCopy:"📋 ಸಂದೇಶ ನಕಲಿಸಿ",
+      checklistTitle:"✅ ತುರ್ತು ಪರಿಶೀಲನಾ ಪಟ್ಟಿ", btnReset:"ಮರುಹೊಂದಿಸಿ",
+      scenario_flood:"ಪ್ರವಾಹ", scenario_fire:"ಬೆಂಕಿ", scenario_earthquake:"ಭೂಕಂಪ", scenario_cyclone:"ಚಂಡಮಾರುತ",
+      scenario_medical:"ವೈದ್ಯಕೀಯ", scenario_chemical:"ರಾಸಾಯನಿಕ", scenario_landslide:"ಭೂಕುಸಿತ", scenario_heatwave:"ಶಾಖದ ಅಲೆ", scenario_general:"ಸಾಮಾನ್ಯ"
+    }
+  };
+
+  function applyLanguage(lang) {
+    const t = TRANSLATIONS[lang] || TRANSLATIONS.English;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      if (t[key] !== undefined) el.textContent = t[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.dataset.i18nPlaceholder;
+      if (t[key] !== undefined) el.placeholder = t[key];
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.dataset.i18nTitle;
+      if (t[key] !== undefined) el.title = t[key];
+    });
+  }
+
+  langSelect.addEventListener("change", () => {
+    currentLanguage = langSelect.value;
+    applyLanguage(currentLanguage);
+    renderQuickQuestions();
+  });
+
+  function renderQuickQuestions() {
+    const qs = QUICK_QUESTIONS[currentScenario] || QUICK_QUESTIONS[""];
+    quickEl.innerHTML = qs.map(q =>
+      `<button class="quick-btn" onclick="sendQuick(this)">${q}</button>`
+    ).join("");
+  }
+
+  function sendQuick(btn) { inputEl.value = btn.textContent; sendMessage(); }
+
+  // ── Language map (shared) ───────────────────────────────────────────────
+  const LANG_MAP = {
+    "English": "en-IN", "Malayalam": "ml-IN", "Hindi": "hi-IN",
+    "Tamil": "ta-IN", "Telugu": "te-IN", "Kannada": "kn-IN"
+  };
+  // Fallback lang codes if exact not found
+  const LANG_FALLBACK = {
+    "ml-IN": ["ml", "en-IN", "en"],
+    "hi-IN": ["hi", "en-IN", "en"],
+    "ta-IN": ["ta", "en-IN", "en"],
+    "te-IN": ["te", "en-IN", "en"],
+    "kn-IN": ["kn", "en-IN", "en"],
+    "en-IN": ["en-US", "en-GB", "en"]
+  };
+
+  // ── Voice status bar ────────────────────────────────────────────────────
+  const voiceStatus = document.getElementById('voice-status');
+  function showVoiceStatus(msg, color) {
+    voiceStatus.textContent = msg;
+    voiceStatus.style.background = color || 'rgba(185,28,28,0.85)';
+    voiceStatus.style.display = 'block';
+  }
+  function hideVoiceStatus() { voiceStatus.style.display = 'none'; }
+
+  // ── TTS voice loader ────────────────────────────────────────────────────
+  let ttsVoices = [];
+  function loadVoices() { ttsVoices = window.speechSynthesis.getVoices(); }
+  loadVoices();
+  if (window.speechSynthesis.onvoiceschanged !== undefined) {
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }
+
+  function getBestVoice(langCode) {
+    // Do not silently use an English voice for Indic-language text.
+    const baseCode = langCode.split('-')[0].toLowerCase();
+    return ttsVoices.find(v => v.lang.toLowerCase() === langCode.toLowerCase()) ||
+      ttsVoices.find(v => v.lang.toLowerCase().startsWith(baseCode + '-')) || null;
+  }
+
+  // ── Voice Input (Web Speech API) ────────────────────────────────────────
+  if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SR();
+    recognition.continuous = true;      // keep listening until user stops
+    recognition.interimResults = true;  // show live transcript
+
+    let finalTranscript = '';
+
+    recognition.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) finalTranscript += e.results[i][0].transcript;
+        else interim += e.results[i][0].transcript;
+      }
+      inputEl.value = finalTranscript + interim;
+    };
+
+    recognition.onerror = (e) => {
+      stopRecording();
+      const errors = {
+        'not-allowed': 'Microphone permission was denied. Allow microphone access and try again.',
+        'no-speech': 'No speech was detected. Please try again.',
+        'language-not-supported': currentLanguage + ' speech recognition is not available in this browser.',
+        'network': 'Speech recognition needs an internet connection. Please check your connection.'
+      };
+      showVoiceStatus(errors[e.error] || ('Voice input error: ' + e.error), 'rgba(185,28,28,0.9)');
+      setTimeout(hideVoiceStatus, 4500);
+    };
+
+    recognition.onend = () => {
+      hideVoiceStatus();
+      stopRecording();
+      if (finalTranscript.trim()) {
+        inputEl.value = finalTranscript.trim();
+        sendMessage();
+      }
+      finalTranscript = '';
+    };
+
+    micBtn.addEventListener("click", () => {
+      if (isRecording) {
+        recognition.stop(); // triggers onend → sends message
+        return;
+      }
+      finalTranscript = '';
+      inputEl.value = '';
+      recognition.lang = LANG_MAP[currentLanguage] || "en-IN";
+      try {
+        recognition.start();
+        isRecording = true;
+        micBtn.classList.add("recording");
+        showVoiceStatus('🎙️ Listening in ' + currentLanguage + '… (tap mic to stop)', 'rgba(185,28,28,0.9)');
+      } catch(e) { console.warn('Recognition start error:', e); }
+    });
+  } else {
+    micBtn.title = "Voice not supported in this browser";
+    micBtn.style.opacity = "0.4";
+  }
+
+  function stopRecording() {
+    isRecording = false;
+    micBtn.classList.remove("recording");
+  }
+
+  // ── Text-to-Speech ──────────────────────────────────────────────────────
+  // Unlock speech synthesis on first user gesture (required by browsers)
+  let speechUnlocked = false;
+  function unlockSpeech() {
+    if (speechUnlocked || !window.speechSynthesis) return;
+    const u = new SpeechSynthesisUtterance('');
+    window.speechSynthesis.speak(u);
+    speechUnlocked = true;
+  }
+  document.addEventListener('click', unlockSpeech, { once: true });
+  document.addEventListener('keydown', unlockSpeech, { once: true });
+
+  function speak(text) {
+    if (!window.speechSynthesis || !text) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    const langCode = LANG_MAP[currentLanguage] || "en-IN";
+    utter.lang = langCode;
+    const voice = getBestVoice(langCode);
+    if (!voice && currentLanguage !== 'English') {
+      showVoiceStatus('No ' + currentLanguage + ' voice is installed in this browser/device. Install one to hear spoken replies.', 'rgba(185,28,28,0.9)');
+      setTimeout(hideVoiceStatus, 5000);
+      return;
+    }
+    if (voice) utter.voice = voice;
+    utter.rate = 1.5;
+    utter.pitch = 1;
+    showVoiceStatus('🔊 Speaking in ' + currentLanguage + '…', 'rgba(22,100,180,0.9)');
+    const resumeTimer = setInterval(() => {
+      if (!window.speechSynthesis.speaking) { clearInterval(resumeTimer); return; }
+      window.speechSynthesis.pause();
+      window.speechSynthesis.resume();
+    }, 10000);
+    utter.onend = () => { clearInterval(resumeTimer); hideVoiceStatus(); };
+    utter.onerror = () => { clearInterval(resumeTimer); hideVoiceStatus(); };
+    window.speechSynthesis.speak(utter);
+  }
+
+  // ── Chat ────────────────────────────────────────────────────────────────
+  // ── Image Upload ────────────────────────────────────────────────────────
+  document.getElementById('img-btn').addEventListener('click', () => document.getElementById('img-input').click());
+  document.getElementById('img-input').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = '';
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target.result;
+      appendImageMessage('user', dataUrl);
+      showTyping();
+      try {
+        const res = await fetch('/analyze-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: dataUrl, scenario: currentScenario || null, language: currentLanguage })
+        });
+        const data = await res.json();
+        removeTyping();
+        appendMessage('bot', data.answer || data.error, { time: data.response_time });
+        if (autoSpeak && data.answer) speak(data.answer);
+      } catch (err) {
+        removeTyping();
+        appendMessage('bot', '⚠️ Could not analyze image. Please try again.');
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function appendImageMessage(role, dataUrl) {
+    const welcome = messagesEl.querySelector('.welcome-card');
+    if (welcome) welcome.remove();
+    const div = document.createElement('div');
+    div.className = `msg ${role}`;
+    div.innerHTML = `
+      <div class="avatar">👤</div>
+      <div style="max-width:100%">
+        <img src="${dataUrl}" class="img-preview" alt="uploaded image"/>
+        <div class="bubble">📷 Image sent for analysis</div>
+      </div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendMessage(role, text, meta = {}) {
+    const welcome = messagesEl.querySelector(".welcome-card");
+    if (welcome) welcome.remove();
+
+    const div = document.createElement("div");
+    div.className = `msg ${role}`;
+
+    let metaHtml = "";
+    if (meta.time) {
+      let severityHtml = "";
+      if (meta.severity) {
+        const cls = `severity-${meta.severity}`;
+        severityHtml = `<span class="severity-badge ${cls}">${meta.severity_icon} ${meta.severity}</span>`;
+      }
+      let confHtml = "";
+      if (meta.confidence !== undefined && role === "bot") {
+        const color = meta.confidence >= 70 ? "#16a34a" : meta.confidence >= 40 ? "#ca8a04" : "#b91c1c";
+        confHtml = `<div class="confidence-bar"><div class="confidence-fill" style="width:${meta.confidence}%;background:${color}"></div></div>`;
+      }
+      let ttsHtml = role === "bot" ? `<button class="tts-btn" onclick="speak(this.dataset.text)" data-text="${escapeAttr(text)}" title="Read aloud">🔊</button>` : "";
+      metaHtml = `<div class="meta">${severityHtml}<span>⏱ ${meta.time}s</span>${meta.confidence !== undefined ? `<span>🎯 ${meta.confidence}%</span>` : ""}${ttsHtml}</div>${confHtml}`;
+    }
+
+    div.innerHTML = `
+      <div class="avatar">${role === "user" ? "👤" : "🛡️"}</div>
+      <div style="max-width:100%">
+        <div class="bubble">${escapeHtml(text)}</div>
+        ${metaHtml}
+      </div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendFallback(topics, message) {
+    const welcome = messagesEl.querySelector(".welcome-card");
+    if (welcome) welcome.remove();
+
+    const div = document.createElement("div");
+    div.className = "msg bot";
+    const topicsHtml = topics.map(t =>
+      `<span class="fallback-topic" onclick="selectFallback('${t.tag}','${t.label}')">${t.icon} ${t.label}</span>`
+    ).join("");
+    div.innerHTML = `
+      <div class="avatar">🛡️</div>
+      <div>
+        <div class="bubble">${escapeHtml(message || "I couldn't find an exact answer to your question.")}</div>
+        <div class="fallback-card">
+          <p>Would you like information about one of these topics?</p>
+          <div class="fallback-topics">${topicsHtml}</div>
+        </div>
+      </div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendSubcategoryChoices(category, subcategories) {
+    const div = document.createElement("div");
+    div.className = "msg bot";
+    const choices = subcategories.map(subcategory =>
+      `<span class="fallback-topic" data-category="${escapeAttr(category)}" data-subcategory="${escapeAttr(subcategory)}" onclick="selectOntologySubcategory(this.dataset.category, this.dataset.subcategory)">${escapeHtml(subcategory)}</span>`
+    ).join("");
+    div.innerHTML = `
+      <div class="avatar">🛡️</div>
+      <div><div class="fallback-card"><p>Select a ${escapeHtml(category)} scenario:</p><div class="fallback-topics">${choices}</div></div></div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function appendDisambiguationChoices(options) {
+    const div = document.createElement("div");
+    div.className = "msg bot";
+    const choices = options.map(opt =>
+      `<span class="fallback-topic" data-category="${escapeAttr(opt.category)}" data-subcategory="${escapeAttr(opt.subcategory)}" onclick="selectOntologySubcategory(this.dataset.category, this.dataset.subcategory)">${escapeHtml(opt.label)}</span>`
+    ).join("");
+    div.innerHTML = `
+      <div class="avatar">🛡️</div>
+      <div><div class="fallback-card"><div class="fallback-topics">${choices}</div></div></div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function selectOntologySubcategory(category, subcategory) {
+    inputEl.value = category + ": " + subcategory;
+    sendMessage();
+  }
+
+  function selectFallback(tag, label) {
+    document.querySelectorAll(".scenario-btn").forEach(b => {
+      b.classList.toggle("active", b.dataset.tag === tag);
+    });
+    currentScenario = tag;
+    renderQuickQuestions();
+    inputEl.value = `Tell me about ${label} safety`;
+    sendMessage();
+  }
+
+  function showTyping() {
+    const div = document.createElement("div");
+    div.className = "msg bot typing";
+    div.id = "typing-indicator";
+    div.innerHTML = `<div class="avatar">🛡️</div><div class="bubble"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function removeTyping() {
+    const t = document.getElementById("typing-indicator");
+    if (t) t.remove();
+  }
+
+  async function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+
+    inputEl.value = "";
+    inputEl.style.height = "auto";
+    sendBtn.disabled = true;
+
+    appendMessage("user", text);
+    chatHistory.push({ role: "user", content: text });
+    showTyping();
+
+    try {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: text,
+          scenario: currentScenario || null,
+          history: chatHistory.slice(-6),
+          language: currentLanguage
+        })
+      });
+      const data = await res.json();
+      removeTyping();
+
+      if (data.error) {
+        appendMessage("bot", "⚠️ " + data.error);
+      } else if (data.clarification) {
+        appendMessage("bot", data.answer, { time: data.response_time });
+        if (data.clarification_type === "subcategory") {
+          appendSubcategoryChoices(data.category, data.subcategories || []);
+        } else if (data.clarification_type === "disambiguation") {
+          appendDisambiguationChoices(data.disambiguation_options || []);
+        }
+        if (autoSpeak && data.answer) speak(data.answer);
+      } else if (data.fallback) {
+        appendFallback(data.fallback_topics, data.answer);
+        if (autoSpeak && data.answer) speak(data.answer);
+      } else {
+        appendMessage("bot", data.answer, {
+          time: data.response_time,
+          confidence: data.confidence,
+          severity: data.severity,
+          severity_icon: data.severity_icon
+        });
+        chatHistory.push({ role: "assistant", content: data.answer });
+        // Auto-speak the answer immediately
+        if (autoSpeak) speak(data.answer);
+      }
+    } catch (err) {
+      removeTyping();
+      appendMessage("bot", "⚠️ Network error. Please check your connection and try again.");
+    }
+
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
+
+  // ── Controls ────────────────────────────────────────────────────────────
+  sendBtn.addEventListener("click", sendMessage);
+  inputEl.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  inputEl.addEventListener("input", () => {
+    inputEl.style.height = "auto";
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + "px";
+  });
+  clearBtn.addEventListener("click", () => {
+    chatHistory = [];
+    fetch('/chat/reset', { method: 'POST' });
+    messagesEl.innerHTML = `
+      <div class="welcome-card">
+        <div class="icon">🛡️</div>
+        <h2>Chat Cleared</h2>
+        <p>Ask me anything about emergency preparedness, evacuation, first aid, or disaster response.</p>
+        <div class="emergency-strip">🚨 For immediate life-threatening emergencies, call <strong>112</strong></div>
+      </div>`;
+  });
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/\n/g,"<br>");
+  }
+  function escapeAttr(str) {
+    return str.replace(/"/g,"&quot;").replace(/'/g,"&#39;").replace(/\n/g," ");
+  }
+
+  // ── Mobile Sidebar Drawer ──────────────────────────────────────────────
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('drawer-overlay').classList.toggle('show');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('drawer-overlay').classList.remove('show');
+  }
+  function checkHamburger() {
+    document.getElementById('hamburger').style.display = window.innerWidth <= 640 ? 'block' : 'none';
+  }
+  checkHamburger();
+  window.addEventListener('resize', checkHamburger);
+
+  renderQuickQuestions();
+
+  // ── SOS Generator ──────────────────────────────────────────────────────
+  async function generateSOS() {
+    const situation = document.getElementById('sos-situation').value.trim();
+    const location  = document.getElementById('sos-location').value.trim() || 'Unknown Location';
+    const people    = document.getElementById('sos-people').value || '1';
+    const medical   = document.getElementById('sos-medical').checked;
+    const resultEl  = document.getElementById('sos-result');
+    const copyBtn   = document.getElementById('sos-copy-btn');
+    if (!situation) { alert('Please describe the emergency situation.'); return; }
+    resultEl.textContent = 'Generating SOS message...';
+    resultEl.classList.add('show');
+    copyBtn.style.display = 'none';
+    const res  = await fetch('/sos', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ situation, location, people, medical })
+    });
+    const data = await res.json();
+    if (data.sos_message) {
+      resultEl.textContent = data.sos_message;
+      copyBtn.style.display = 'block';
+    } else {
+      resultEl.textContent = data.error || 'Failed to generate SOS message.';
+    }
+  }
+
+  function copySOSMessage() {
+    const text = document.getElementById('sos-result').textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('sos-copy-btn');
+      btn.textContent = '✅ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Copy Message'; }, 2000);
+    });
+  }
+
+  // ── Checklist ──────────────────────────────────────────────────────────
+  const CHECKLISTS = {
+    '':         { label: 'General Emergency', items: ['Call 112 for any emergency','Stay calm and assess situation','Help injured if trained','Follow official instructions','Keep emergency kit ready','Know your evacuation route','Stay informed via radio/TV'] },
+    flood:      { label: 'Flood Emergency',   items: ['Move to higher ground','Turn off electricity at main switch','Avoid walking in floodwater','Take emergency kit','Call 1077 (Disaster Helpline)','Lock your home','Follow evacuation route'] },
+    fire:       { label: 'Fire Emergency',    items: ['Exit the building immediately','Do not use the elevator','Activate fire alarm','Call 101 (Fire Services)','Stay low to avoid smoke','Close doors behind you','Meet at assembly point'] },
+    earthquake: { label: 'Earthquake',        items: ['Drop, Cover, Hold On','Stay away from windows','Turn off gas supply','Check for injuries','Watch for aftershocks','Do not use elevators','Call 112 if trapped'] },
+    cyclone:    { label: 'Cyclone / Storm',   items: ['Stay indoors away from windows','Secure loose outdoor objects','Stock food and water','Charge all devices','Know nearest cyclone shelter','Follow evacuation orders','Do not go out during eye'] },
+    medical:    { label: 'Medical Emergency', items: ['Call 108 immediately','Keep person calm and still','Do not give food or water','Perform CPR if trained','Note time symptoms started','Collect medicines','Stay on line with dispatcher'] },
+    landslide:  { label: 'Landslide',         items: ['Evacuate immediately uphill','Do not stop for belongings','Alert neighbours','Call 112','Avoid river valleys','Watch for secondary slides','Do not enter damaged buildings'] },
+    heatwave:   { label: 'Heatwave',          items: ['Stay indoors 12pm-4pm','Drink water every 30 minutes','Wear light loose clothing','Check on elderly and children','Use fans or AC','Avoid alcohol and caffeine','Call 108 for heat stroke'] },
+    chemical:   { label: 'Chemical Hazard',   items: ['Evacuate upwind immediately','Cover nose and mouth','Do not touch the substance','Call 112 and 101','Remove contaminated clothing','Flush skin with water 15 mins','Shelter in place if told to'] }
+  };
+
+  function openChecklist() {
+    const cl = CHECKLISTS[currentScenario] || CHECKLISTS[''];
+    document.getElementById('checklist-scenario-label').textContent = cl.label;
+    renderChecklistItems(cl.items);
+    document.getElementById('checklist-modal').classList.add('show');
+  }
+
+  function renderChecklistItems(items) {
+    document.getElementById('checklist-items').innerHTML = items.map((item, i) => `
+      <div class="checklist-item" id="ci-${i}">
+        <input type="checkbox" id="cb-${i}" onchange="toggleCheck(${i})"/>
+        <label for="cb-${i}">${item}</label>
+      </div>`).join('');
+  }
+
+  function toggleCheck(i) {
+    document.getElementById(`ci-${i}`).classList.toggle('checked', document.getElementById(`cb-${i}`).checked);
+  }
+
+  function resetChecklist() {
+    document.querySelectorAll('#checklist-items input[type=checkbox]').forEach(cb => { cb.checked = false; });
+    document.querySelectorAll('.checklist-item').forEach(el => el.classList.remove('checked'));
+  }
+
+  // ── Mute Toggle ──────────────────────────────────────────────────────────
+  function toggleMute() {
+    autoSpeak = !autoSpeak;
+    const btn = document.getElementById('mute-btn');
+    btn.textContent = autoSpeak ? '🔊' : '🔇';
+    btn.title = autoSpeak ? 'Auto-speak ON (click to mute)' : 'Auto-speak OFF (click to unmute)';
+    btn.style.color = autoSpeak ? '' : '#ef4444';
+    if (!autoSpeak) { window.speechSynthesis.cancel(); hideVoiceStatus(); }
+  }
+</script>
+</body>
+</html>

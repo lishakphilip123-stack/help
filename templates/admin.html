@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — Emergency Chatbot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0d1117; color: #e6edf3; min-height: 100vh; }
+    header {
+      background: linear-gradient(135deg, #b91c1c, #7f1d1d);
+      padding: 12px 24px; display: flex; align-items: center; gap: 12px;
+    }
+    header h1 { font-size: 1.1rem; font-weight: 700; }
+    header p  { font-size: 0.72rem; opacity: 0.8; }
+    .header-right { margin-left: auto; display: flex; gap: 10px; align-items: center; }
+    .nav-link {
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px; color: #fff; padding: 5px 12px;
+      font-size: 0.75rem; text-decoration: none; transition: background 0.2s;
+    }
+    .nav-link:hover { background: rgba(255,255,255,0.2); }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 20px; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat-card {
+      background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+      padding: 18px; text-align: center;
+    }
+    .stat-card .num { font-size: 2rem; font-weight: 700; color: #ef4444; }
+    .stat-card .lbl { font-size: 0.75rem; color: #8b949e; margin-top: 4px; }
+
+    /* Sections */
+    .section { background: #161b22; border: 1px solid #30363d; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+    .section h2 { font-size: 0.95rem; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+    /* Add FAQ form */
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    select, input, textarea {
+      background: #21262d; border: 1px solid #30363d; border-radius: 8px;
+      color: #e6edf3; padding: 8px 12px; font-size: 0.82rem;
+      outline: none; font-family: inherit; transition: border-color 0.2s;
+    }
+    select:focus, input:focus, textarea:focus { border-color: #ef4444; }
+    select { cursor: pointer; }
+    .flex1 { flex: 1; min-width: 160px; }
+    textarea { width: 100%; resize: vertical; min-height: 70px; }
+    .btn {
+      background: #b91c1c; border: none; border-radius: 8px; color: #fff;
+      padding: 8px 18px; font-size: 0.82rem; font-weight: 600;
+      cursor: pointer; transition: background 0.2s; font-family: inherit;
+    }
+    .btn:hover { background: #dc2626; }
+    .btn-danger { background: #7f1d1d; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 4px 10px; font-size: 0.72rem; }
+
+    /* FAQ list */
+    .scenario-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tab-btn {
+      background: #21262d; border: 1px solid #30363d; border-radius: 16px;
+      color: #c9d1d9; padding: 4px 12px; font-size: 0.75rem; cursor: pointer;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .tab-btn.active { background: #b91c1c; border-color: #ef4444; color: #fff; font-weight: 600; }
+    .faq-item {
+      background: #21262d; border: 1px solid #30363d; border-radius: 8px;
+      padding: 10px 14px; margin-bottom: 8px; display: flex; gap: 10px; align-items: flex-start;
+    }
+    .faq-item .faq-content { flex: 1; }
+    .faq-item .faq-q { font-size: 0.82rem; font-weight: 600; margin-bottom: 3px; }
+    .faq-item .faq-a { font-size: 0.75rem; color: #8b949e; line-height: 1.5; }
+    .faq-num { font-size: 0.68rem; color: #484f58; min-width: 24px; padding-top: 2px; }
+
+    .alert { padding: 8px 14px; border-radius: 8px; font-size: 0.8rem; margin-bottom: 12px; display: none; }
+    .alert.show { display: block; }
+    .alert-success { background: rgba(22,163,74,0.15); border: 1px solid #16a34a; color: #86efac; }
+    .alert-error   { background: rgba(185,28,28,0.15); border: 1px solid #b91c1c; color: #fca5a5; }
+  </style>
+</head>
+<body>
+<header>
+  <div style="font-size:24px">⚙️</div>
+  <div>
+    <h1>Admin Dashboard</h1>
+    <p>Emergency Response Chatbot — Management Panel</p>
+  </div>
+  <div class="header-right">
+    <span style="font-size:0.75rem;color:rgba(255,255,255,0.7)">👤 {{ username }}</span>
+    <a href="/" class="nav-link">💬 Chatbot</a>
+    <a href="/logout" class="nav-link">Logout</a>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card"><div class="num">{{ total_faqs }}</div><div class="lbl">Total FAQs</div></div>
+    <div class="stat-card"><div class="num">{{ scenarios|length }}</div><div class="lbl">Scenarios</div></div>
+    <div class="stat-card"><div class="num">{{ total_users }}</div><div class="lbl">Registered Users</div></div>
+    <div class="stat-card"><div class="num">🟢</div><div class="lbl">System Status</div></div>
+  </div>
+
+  <!-- Add FAQ -->
+  <div class="section">
+    <h2>➕ Add New FAQ</h2>
+    <div id="add-alert" class="alert"></div>
+    <div class="form-row">
+      <select id="add-scenario" class="flex1">
+        {% for tag, s in scenarios.items() %}
+        <option value="{{ tag }}">{{ s.icon }} {{ s.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <input type="text" id="add-question" class="flex1" placeholder="Enter the question…"/>
+    </div>
+    <textarea id="add-answer" placeholder="Enter the answer…"></textarea>
+    <br/><br/>
+    <button class="btn" onclick="addFaq()">Add FAQ</button>
+  </div>
+
+  <!-- FAQ List -->
+  <div class="section">
+    <h2>📋 Manage FAQs</h2>
+    <div class="scenario-tabs" id="scenario-tabs">
+      {% for tag, s in scenarios.items() %}
+      <button class="tab-btn {% if loop.first %}active{% endif %}" data-tag="{{ tag }}" onclick="loadFaqs('{{ tag }}', this)">
+        {{ s.icon }} {{ s.label }}
+      </button>
+      {% endfor %}
+    </div>
+    <div id="faq-list">Loading...</div>
+  </div>
+
+</div>
+
+<script>
+  let currentTab = "{{ scenarios.keys()|list|first }}";
+
+  async function loadFaqs(tag, btn) {
+    currentTab = tag;
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    if (btn) btn.classList.add("active");
+    document.getElementById("faq-list").innerHTML = "Loading...";
+    const res  = await fetch(`/admin/faqs/${tag}`);
+    const data = await res.json();
+    if (!data.faqs || data.faqs.length === 0) {
+      document.getElementById("faq-list").innerHTML = `<p style="color:#8b949e;font-size:0.82rem">No FAQs found for this scenario.</p>`;
+      return;
+    }
+    document.getElementById("faq-list").innerHTML = data.faqs.map((f, i) => `
+      <div class="faq-item" id="faq-${i}">
+        <div class="faq-num">${i + 1}.</div>
+        <div class="faq-content">
+          <div class="faq-q">${escHtml(f.q)}</div>
+          <div class="faq-a">${escHtml(f.a)}</div>
+        </div>
+        <button class="btn btn-danger btn-sm" onclick="deleteFaq(${i})">🗑️ Delete</button>
+      </div>`).join("");
+  }
+
+  async function addFaq() {
+    const alertEl  = document.getElementById("add-alert");
+    const scenario = document.getElementById("add-scenario").value;
+    const question = document.getElementById("add-question").value.trim();
+    const answer   = document.getElementById("add-answer").value.trim();
+    alertEl.className = "alert";
+
+    if (!question || !answer) {
+      alertEl.textContent = "Please fill in both question and answer.";
+      alertEl.classList.add("show", "alert-error");
+      return;
+    }
+    const res  = await fetch("/admin/add-faq", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ scenario, question, answer })
+    });
+    const data = await res.json();
+    if (data.error) {
+      alertEl.textContent = data.error;
+      alertEl.classList.add("show", "alert-error");
+    } else {
+      alertEl.textContent = `FAQ added! Total FAQs in this scenario: ${data.total}`;
+      alertEl.classList.add("show", "alert-success");
+      document.getElementById("add-question").value = "";
+      document.getElementById("add-answer").value   = "";
+      if (currentTab === scenario) loadFaqs(scenario, null);
+    }
+  }
+
+  async function deleteFaq(index) {
+    if (!confirm("Delete this FAQ?")) return;
+    const res  = await fetch("/admin/delete-faq", {
+      method: "POST", headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ scenario: currentTab, index })
+    });
+    const data = await res.json();
+    if (data.success) loadFaqs(currentTab, null);
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  // Load first tab on page load
+  loadFaqs(currentTab, null);
+</script>
+</body>
+</html>

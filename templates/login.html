@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Emergency Response Chatbot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-image: radial-gradient(ellipse at top, #1a0a0a 0%, #0d1117 60%);
+    }
+
+    .brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .brand .logo { font-size: 52px; }
+    .brand h1 { font-size: 1.3rem; font-weight: 700; margin-top: 8px; }
+    .brand p  { font-size: 0.78rem; color: #8b949e; margin-top: 4px; }
+
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    .card h2 { font-size: 1.1rem; margin-bottom: 6px; }
+    .card .sub { font-size: 0.78rem; color: #8b949e; margin-bottom: 24px; }
+
+    .form-group { margin-bottom: 16px; }
+    label { display: block; font-size: 0.78rem; color: #8b949e; margin-bottom: 6px; font-weight: 500; }
+    input {
+      width: 100%;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    input:focus { border-color: #ef4444; }
+    input::placeholder { color: #484f58; }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, #b91c1c, #dc2626);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      padding: 12px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+      font-family: inherit;
+    }
+    .btn:hover { opacity: 0.9; }
+
+    .divider { text-align: center; color: #484f58; font-size: 0.78rem; margin: 18px 0; }
+
+    .link-row { text-align: center; font-size: 0.82rem; color: #8b949e; }
+    .link-row a { color: #ef4444; text-decoration: none; font-weight: 600; }
+    .link-row a:hover { text-decoration: underline; }
+
+    .alert {
+      background: rgba(185,28,28,0.15);
+      border: 1px solid #b91c1c;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: #fca5a5;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .alert.show { display: block; }
+
+    .features {
+      margin-top: 28px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .feature-item {
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.74rem;
+      color: #8b949e;
+      text-align: center;
+    }
+    .feature-item .fi { font-size: 18px; display: block; margin-bottom: 4px; }
+
+    .emergency-note {
+      margin-top: 24px;
+      background: rgba(185,28,28,0.1);
+      border: 1px solid rgba(185,28,28,0.3);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.75rem;
+      color: #fca5a5;
+      text-align: center;
+      max-width: 400px;
+    }
+    @media (max-width: 480px) {
+      body { padding: 16px; justify-content: flex-start; padding-top: 40px; min-height: 100dvh; }
+      .brand .logo { font-size: 40px; }
+      .brand h1 { font-size: 1.1rem; }
+      .card { padding: 22px 18px; border-radius: 12px; }
+      input { padding: 12px 14px; font-size: 0.92rem; }
+      .btn { padding: 14px; font-size: 0.95rem; }
+      .features { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="brand">
+  <div class="logo">🆘</div>
+  <h1>Emergency Response Chatbot</h1>
+  <p>AI Friday Season 2 — Public Safety System</p>
+</div>
+
+<div class="card">
+  <h2>Welcome Back</h2>
+  <p class="sub">Sign in to access your emergency assistant</p>
+
+  <div class="alert" id="error-msg"></div>
+
+  <form id="login-form">
+    <div class="form-group">
+      <label>Email Address</label>
+      <input type="email" id="email" placeholder="you@example.com" required/>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="password" placeholder="Enter your password" required/>
+    </div>
+    <button type="submit" class="btn">Sign In</button>
+  </form>
+
+  <div class="divider">— or —</div>
+  <div class="link-row">Don't have an account? <a href="/register">Register Now</a></div>
+
+  <div class="features">
+    <div class="feature-item"><span class="fi">🎙️</span>Voice Support</div>
+    <div class="feature-item"><span class="fi">🌐</span>Multi-language</div>
+    <div class="feature-item"><span class="fi">🚨</span>6 Scenarios</div>
+    <div class="feature-item"><span class="fi">⚡</span>Real-time AI</div>
+  </div>
+</div>
+
+<div class="emergency-note">
+  🚨 For immediate emergencies, call <strong>112</strong> — do not wait for the chatbot
+</div>
+
+<script>
+  document.getElementById("login-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById("error-msg");
+    errEl.classList.remove("show");
+
+    const email    = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    const res = await fetch("/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+
+    if (data.error) {
+      errEl.textContent = data.error;
+      errEl.classList.add("show");
+    } else {
+      window.location.href = "/";
+    }
+  });
+</script>
+</body>
+</html>
